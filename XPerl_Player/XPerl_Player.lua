@@ -386,6 +386,50 @@ local function XPerl_Player_DruidBarUpdate(self)
 	end
 end
 
+-- Ascension bar
+local function XPerl_Player_AscBarUpdate(self)
+	local ascRageBar = self.statsFrame.ascRageBar
+	local ascEnergyBar = self.statsFrame.ascEnergyBar
+
+	local maxRage = UnitPowerMax("player", 1)
+	local currRage = UnitPower("player", 1)
+	local maxEnergy = UnitPowerMax("player", 3)
+	local currEnergy = UnitPower("player", 3)
+
+	ascRageBar:SetMinMaxValues(0, maxRage or 1)
+	ascRageBar:SetValue(currRage or 0)
+	ascRageBar.text:SetFormattedText("%d/%d", ceil(currRage or 0), maxRage or 1)
+	ascRageBar.percent:SetFormattedText(percD, currRage * 100 / maxRage)
+
+	ascEnergyBar:SetMinMaxValues(0, maxEnergy or 1)
+	ascEnergyBar:SetValue(currEnergy or 0)
+	ascEnergyBar.text:SetFormattedText("%d/%d", ceil(currEnergy or 0), maxEnergy or 1)
+	ascRageBar.percent:SetFormattedText(percD, currEnergy * 100 / maxEnergy)
+
+	local ascBarExtra
+	ascRageBar.text:Show()
+	ascEnergyBar.text:Show()
+	if (pconf.percent) then
+		ascRageBar.percent:Show()
+		ascEnergyBar.percent:Show()
+	end
+	ascRageBar:Show()
+	ascRageBar:SetHeight(10)
+	ascEnergyBar:Show()
+	ascEnergyBar:SetHeight(10)
+	ascBarExtra = 2
+
+	local h = 40 + ((ascBarExtra + (pconf.repBar or 0) + (pconf.xpBar or 0)) * 10)
+	if (pconf.extendPortrait and not InCombatLockdown()) then
+		self.portraitFrame:SetHeight(62 + ascBarExtra * 10 + (((pconf.xpBar or 0) + (pconf.repBar or 0)) * 10))
+	end
+	self.statsFrame:SetHeight(h)
+	XPerl_StatsFrameSetup(self, {ascRageBar, ascEnergyBar, self.statsFrame.xpBar, self.statsFrame.repBar})
+	if (XPerl_Player_Buffs_Position) then
+		XPerl_Player_Buffs_Position(self)
+	end
+end
+
 -- XPerl_Player_UpdateMana
 local function XPerl_Player_UpdateMana(self)
 	local mb = self.statsFrame.manaBar
@@ -412,6 +456,7 @@ local function XPerl_Player_UpdateMana(self)
 	if (playerClass == "DRUID") then
 		XPerl_Player_DruidBarUpdate(self)
 	end
+	XPerl_Player_AscBarUpdate(self)
 end
 
 local spiritOfRedemption = GetSpellInfo(27827)
@@ -978,6 +1023,18 @@ local function MakeDruidBar(self)
 	MakeDruidBar = nil
 end
 
+local function MakeAscBar(self)
+	local f = CreateBar(self, "ascRageBar")
+	local c = conf.colour.bar.rage
+	f:SetStatusBarColor(c.r, c.g, c.b)
+	f.bg:SetVertexColor(c.r, c.g, c.b, 0.25)
+	local f = CreateBar(self, "ascEnergyBar")
+	local c = conf.colour.bar.energy
+	f:SetStatusBarColor(c.r, c.g, c.b)
+	f.bg:SetVertexColor(c.r, c.g, c.b, 0.25)
+	MakeAscBar = nil
+end
+
 -- MakeXPBars
 local function MakeXPBars(self)
 	local f = CreateBar(self, "xpBar")
@@ -1048,6 +1105,8 @@ function XPerl_Player_Set_Bits(self)
 	else
 		MakeDruidBar = nil
 	end
+
+	MakeAscBar(self)
 
 	if (pconf.xpBar) then
 		if (not self.statsFrame.xpBar) then
